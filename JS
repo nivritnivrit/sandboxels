@@ -1,0 +1,95 @@
+// === Universe Sandbox Lite Mod w/ Time Warp ===
+
+// ===== SETTINGS =====
+var timeWarp = 1; // simulation speed
+const G = 0.05;
+const MAX_DIST = 30;
+
+// Gravity function
+function applyGravity(pixel) {
+    for (let dx = -MAX_DIST; dx <= MAX_DIST; dx++) {
+        for (let dy = -MAX_DIST; dy <= MAX_DIST; dy++) {
+            let x = pixel.x + dx;
+            let y = pixel.y + dy;
+
+            if (!isEmpty(x, y)) {
+                let other = pixelMap[x][y];
+                if (!other || other === pixel) continue;
+                if (!other.mass) continue;
+
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 2 || dist > MAX_DIST) continue;
+
+                let force = (G * pixel.mass * other.mass) / (dist * dist);
+
+                pixel.vx += (dx / dist) * force;
+                pixel.vy += (dy / dist) * force;
+            }
+        }
+    }
+}
+
+// Physics update loop
+function physicsStep(pixel) {
+    applyGravity(pixel);
+
+    let nx = Math.round(pixel.x + pixel.vx);
+    let ny = Math.round(pixel.y + pixel.vy);
+
+    if (isEmpty(nx, ny)) {
+        movePixel(pixel, nx, ny);
+    }
+
+    pixel.vx *= 0.999;
+    pixel.vy *= 0.999;
+}
+
+// === STAR ===
+elements.star = {
+    color: "#ffdd55",
+    behavior: behaviors.WALL,
+    category: "space",
+    mass: 1000,
+    vx: 0,
+    vy: 0,
+    tick(pixel) {
+        for (let i = 0; i < timeWarp; i++) {
+            physicsStep(pixel);
+        }
+    },
+    temp: 6000,
+    state: "solid"
+};
+
+// === PLANET ===
+elements.planet = {
+    color: "#4c6fff",
+    behavior: behaviors.POWDER,
+    category: "space",
+    mass: 50,
+    vx: 0,
+    vy: 0,
+    tick(pixel) {
+        for (let i = 0; i < timeWarp; i++) {
+            physicsStep(pixel);
+        }
+    },
+    state: "solid"
+};
+
+// === SPACE DUST ===
+elements.space_dust = {
+    color: "#888888",
+    behavior: behaviors.POWDER,
+    category: "space",
+    mass: 1,
+    vx: 0,
+    vy: 0,
+    tick(pixel) {
+        for (let i = 0; i < timeWarp; i++) {
+            physicsStep(pixel);
+        }
+    }
+};
+
+
